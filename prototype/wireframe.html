@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>装修设计器 · 布局线框图</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 1280px; height: 800px; font: 13px/1.5 -apple-system, "PingFang SC", sans-serif; color: #333; background: #f4f4f2; }
+  .app { display: grid; grid-template-rows: 48px 1fr; height: 800px; }
+  .top { display: flex; align-items: center; gap: 10px; padding: 0 14px; background: #fff; border-bottom: 1px solid #ddd; }
+  .name { font-weight: 600; margin-right: 6px; }
+  .seg { display: flex; border: 1px solid #bbb; border-radius: 6px; overflow: hidden; }
+  .seg span { padding: 3px 12px; }
+  .seg span.on { background: #555; color: #fff; }
+  .btn { border: 1px solid #bbb; border-radius: 6px; padding: 3px 10px; background: #fff; }
+  .btn.pri { background: #555; color: #fff; border-color: #555; }
+  .btn.dis { color: #aaa; border-color: #ddd; }
+  .grow { flex: 1; }
+  .tag { color: #2a7a3a; }
+  .body { display: grid; grid-template-columns: var(--l, 270px) 1fr var(--r, 290px); min-height: 0; }
+  .col { background: #fff; padding: 12px; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  .left { border-right: 1px solid #ddd; }
+  .right { border-left: 1px solid #ddd; }
+  .h { font-weight: 600; display: flex; justify-content: space-between; }
+  .muted { color: #888; }
+  .msg { border: 1px solid #ddd; border-radius: 8px; padding: 8px; }
+  .msg.u { background: #f1f1f1; align-self: flex-end; max-width: 85%; }
+  .input { margin-top: auto; border: 1px solid #bbb; border-radius: 8px; padding: 8px; color: #999; display: flex; justify-content: space-between; }
+  .collapsed { background: #fff; border-right: 1px solid #ddd; writing-mode: vertical-rl; padding: 12px 8px; color: #666; }
+  .collapsed.r { border-right: 0; border-left: 1px solid #ddd; }
+  .canvas { position: relative; margin: 12px; border: 2px dashed #bbb; border-radius: 8px; background: #fafaf8; }
+  .label { position: absolute; left: 10px; bottom: 8px; color: #999; font-size: 12px; }
+  .tools { position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; }
+  .tools.r { left: auto; right: 10px; }
+  .banner { position: absolute; left: 10px; right: 10px; top: 10px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 2px solid #c98a1a; background: #fff7e6; border-radius: 8px; }
+  .banner b { color: #9a5b00; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid #eee; padding: 4px 0; }
+  .f { border: 1px solid #ccc; border-radius: 4px; padding: 1px 8px; min-width: 70px; text-align: right; background: #fff; }
+  .ro { background: #f1f1f1; color: #666; border-style: dashed; }
+  .sw { display: inline-block; width: 14px; height: 14px; border: 1px solid #999; border-radius: 3px; vertical-align: -2px; }
+  .sec { font-weight: 600; margin-top: 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  td, th { border: 1px solid #ddd; padding: 2px 4px; text-align: left; }
+  .card { border: 1px solid #bbb; border-radius: 6px; padding: 6px; flex: 1; text-align: center; }
+  .card.on { border: 2px solid #555; }
+  .note { position: absolute; background: #fffbe0; border: 1px solid #e0c96a; border-radius: 4px; padding: 2px 6px; font-size: 12px; color: #6b5a00; }
+  svg text { font-family: inherit; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+const s = new URLSearchParams(location.search).get('s') || '1';
+
+const topbar = ({ page, mode, dim, save = '已保存', locked = false }) => `
+<div class="top">
+  <span class="name">我的家 ▾</span>
+  <div class="seg"><span class="${page==='plan'?'on':''}">平面图</span><span class="${page==='3d'?'on':''}">3D</span></div>
+  <div class="seg"><span class="${mode==='preview'?'on':''}">预览</span><span class="${mode==='edit'?'on':''}">编辑</span></div>
+  <div class="seg"><span class="${dim==='room'?'on':''}">房间</span><span class="${dim==='furn'?'on':''}">家具</span></div>
+  <span class="btn">↶</span><span class="btn">↷</span>
+  <span class="grow"></span>
+  <span class="tag">● ${save}</span>
+  <span class="btn ${locked?'dis':''}">保存为版本</span>
+  <span class="btn">风格</span><span class="btn">历史版本</span>
+  <span class="btn">⋯ 菜单（导入/导出/模型设置）</span>
+</div>`;
+
+const chat = (inner) => `<div class="col left"><div class="h">AI 对话 <span class="muted">‹ 收起</span></div>${inner}<div class="input"><span>说说你想怎么改…</span><span class="btn pri">发送</span></div></div>`;
+
+// 平面示例：单位 mm，缩放 0.06 px/mm
+const rooms = [
+  { n:'客厅', x:0, y:0, l:5000, w:4000 },
+  { n:'餐厅', x:5000, y:0, l:3000, w:2600 },
+  { n:'厨房', x:5000, y:2600, l:3000, w:1400 },
+  { n:'主卧', x:0, y:4000, l:4000, w:3600 },
+  { n:'次卧', x:4000, y:4000, l:2600, w:3600 },
+  { n:'卫生间', x:6600, y:4000, l:1400, w:2000 },
+];
+function plan({ sel, dashed, ghost, furnFaded }) {
+  const k = 0.062, ox = 70, oy = 70;
+  let g = '';
+  for (const r of rooms) {
+    const isSel = r.n === sel;
+    g += `<rect x="${ox+r.x*k}" y="${oy+r.y*k}" width="${r.l*k}" height="${r.w*k}" fill="${isSel?'#eef3ff':'#f3f0ea'}" stroke="#444" stroke-width="${isSel?3:7}" ${isSel?'':''}/>`;
+    g += `<text x="${ox+r.x*k+10}" y="${oy+r.y*k+20}" font-size="13" font-weight="600">${r.n}</text>`;
+    g += `<text x="${ox+r.x*k+10}" y="${oy+r.y*k+34}" font-size="10" fill="#888">${(r.l/1000).toFixed(2)}×${(r.w/1000).toFixed(2)} m</text>`;
+  }
+  // 客厅-餐厅开放边（L 形）
+  g += `<line x1="${ox+5000*k}" y1="${oy+300*k}" x2="${ox+5000*k}" y2="${oy+2600*k}" stroke="#f3f0ea" stroke-width="9"/>`;
+  g += `<line x1="${ox+5000*k}" y1="${oy+300*k}" x2="${ox+5000*k}" y2="${oy+2600*k}" stroke="#999" stroke-dasharray="4 4"/>`;
+  // 门
+  g += `<path d="M ${ox+200*k} ${oy+4000*k} a ${900*k} ${900*k} 0 0 1 ${900*k} ${-900*k}" fill="none" stroke="#777"/>`;
+  g += `<line x1="${ox+200*k}" y1="${oy+4000*k}" x2="${ox+1100*k}" y2="${oy+4000*k}" stroke="#f3f0ea" stroke-width="9"/>`;
+  // 窗
+  g += `<rect x="${ox+1500*k}" y="${oy-4}" width="${2000*k}" height="8" fill="#fff" stroke="#555"/>`;
+  // 家具
+  const op = furnFaded ? 0.4 : 1, tc = furnFaded ? '#999' : '#333';
+  const furn = [
+    [1300,3000,2400,850, dashed?'原位置':'沙发', dashed?3760:3480],
+    [1900,1900,1200,600,'茶几',2250],
+    [600,5000,1800,2000,'床',6100],
+    [5800,700,1400,900,'餐桌',1200],
+  ];
+  for (const [x,y,l,w,n,ty] of furn) {
+    g += `<rect x="${ox+x*k}" y="${oy+y*k}" width="${l*k}" height="${w*k}" rx="5" fill="#ddd" stroke="#777" opacity="${op}"/>`;
+    g += `<text x="${ox+(x+l/2)*k}" y="${oy+ty*k}" text-anchor="middle" font-size="11" fill="${dashed&&n==='原位置'?'#777':tc}">${n}</text>`;
+  }
+  if (sel) {
+    const r = rooms.find(r => r.n === sel);
+    const pts = [[0,0],[.5,0],[1,0],[0,.5],[1,.5],[0,1],[.5,1],[1,1]];
+    for (const [a,b] of pts) g += `<rect x="${ox+(r.x+r.l*a)*k-5}" y="${oy+(r.y+r.w*b)*k-5}" width="10" height="10" fill="#fff" stroke="#3a5bd9" stroke-width="2"/>`;
+  }
+  if (dashed) {
+    g += `<rect x="${ox+1300*k}" y="${oy+2600*k}" width="${2400*k}" height="${850*k}" rx="6" fill="#fff3d6" stroke="#c98a1a" stroke-width="2" stroke-dasharray="6 4"/><text x="${ox+2500*k}" y="${oy+2880*k}" text-anchor="middle" font-size="11" fill="#9a5b00">沙发（新位置）</text>`;
+  }
+  if (ghost) g += `<text x="${ox+3800*k}" y="${oy+3250*k}" font-size="11" fill="#9a5b00">↑ 上移 400</text>`;
+  return `<svg width="100%" height="100%" viewBox="0 0 640 600">${g}</svg>`;
+}
+
+const field = (k, v, ro) => `<div class="row"><span>${k}</span><span class="f ${ro?'ro':''}">${v}</span></div>`;
+
+const screens = {
+  // 1 平面 · 编辑 · 房间维度
+  '1': () => topbar({ page:'plan', mode:'edit', dim:'room' }) + `<div class="body">
+    ${chat(`<div class="muted">还没有对话。可以说“把客厅加宽 30 厘米”。</div>`)}
+    <div class="canvas">
+      <div class="tools"><span class="btn pri">选择</span><span class="btn">画房间</span><span class="btn">加门</span><span class="btn">加窗</span><span class="btn">网格 100 ▾</span></div>
+      <div class="tools r"><span class="btn">适合窗口</span><span class="btn">－</span><span class="btn">＋</span></div>
+      <div style="position:absolute;inset:50px 20px 30px">${plan({ sel:'客厅', furnFaded:true })}</div>
+      <div style="position:absolute;left:10px;top:52px;display:flex;gap:6px"><span class="note" style="position:static">虚线 = 开放边（L 形客餐厅）</span><span class="note" style="position:static">房间维度：家具变淡、点不中</span><span class="note" style="position:static">左上角：名称 + 轴线尺寸</span></div>
+      <div class="label">中间画布：平面户型图（SVG）　比例尺 ▭ 1 m</div>
+    </div>
+    <div class="col right">
+      <div class="h">客厅 <span class="muted">房间 ›</span></div>
+      ${field('名称','客厅')}${field('用途','客厅 ▾')}
+      <div class="sec">位置与尺寸（轴线）</div>
+      ${field('起点 x','0 mm')}${field('起点 y','0 mm')}${field('长（左右）','5000 mm')}${field('宽（上下）','4000 mm')}
+      ${field('室内净尺寸（参考）','4760×3760',true)}
+      <div class="sec">外观</div>
+      ${field('平面识别色','<i class="sw" style="background:#eef3ff"></i>')}${field('地面','木地板 · 跟随风格')}
+      <div class="sec">墙（本房间一侧）</div>
+      ${field('上 · 外墙','240 mm')}${field('右 · 与餐厅','开放')}${field('下 · 与主卧','120 mm')}
+      <div style="margin-top:auto;display:flex;gap:6px"><span class="btn">复制</span><span class="btn">删除…</span></div>
+    </div></div>`,
+
+  // 2 3D · 预览 · 全屋
+  '2': () => topbar({ page:'3d', mode:'preview', dim:'room' }) + `<div class="body" style="--l:36px;--r:250px">
+    <div class="collapsed">AI 对话 ›（预览默认收起）</div>
+    <div class="canvas">
+      <div class="tools"><span class="btn pri">全屋</span><span class="btn">单间：选择房间 ▾</span><span class="btn">剖面 ○</span></div>
+      <div class="tools r"><span class="btn">恢复视角</span><span class="btn">俯视</span></div>
+      <svg width="100%" height="100%" viewBox="0 140 700 470">
+        <polygon points="350,470 640,340 350,210 60,340" fill="#ecebe6" stroke="#999"/>
+        <polygon points="60,340 350,470 350,530 60,400" fill="#e2e0da" stroke="#999"/>
+        <polygon points="350,470 640,340 640,400 350,530" fill="#d8d6cf" stroke="#999"/>
+        <polygon points="350,430 580,330 350,230 120,330" fill="#fafafa" stroke="#555" stroke-width="2"/>
+        <polygon points="120,330 350,230 350,180 120,280" fill="#f2f2f2" stroke="#777"/>
+        <polygon points="350,230 580,330 580,280 350,180" fill="#f2f2f2" stroke="#777"/>
+        <line x1="235" y1="280" x2="465" y2="380" stroke="#777"/><line x1="350" y1="230" x2="350" y2="430" stroke="#bbb"/>
+        <text x="290" y="320" text-anchor="middle" font-size="12" fill="#666" stroke="#fafafa" stroke-width="5" paint-order="stroke">房屋（墙 / 门窗 / 家具）</text>
+        <text x="350" y="565" text-anchor="middle" font-size="13" fill="#777">大展示基座：房屋外轮廓 + 600 mm 边距</text>
+      </svg>
+      <div class="label">中间画布：3D 全屋（Three.js）　拖动旋转 · 滚轮缩放 · 右键平移</div>
+    </div>
+    <div class="col right">
+      <div class="h">主卧 <span class="muted">只读</span></div>
+      <div class="muted">预览模式：点选查看信息，不能修改。</div>
+      ${field('轴线尺寸','4.00×3.60 m',true)}${field('室内净尺寸','3.82×3.42 m',true)}${field('家具','3 件',true)}${field('门窗','门 1 · 窗 1',true)}
+      <div style="margin-top:auto" class="btn">切到编辑模式</div>
+    </div></div>`,
+
+  // 3 AI 试看（平面 · 编辑）
+  '3': () => topbar({ page:'plan', mode:'edit', dim:'furn', locked:true }) + `<div class="body">
+    ${chat(`
+      <div class="msg u">把沙发往上挪 40 厘米，离电视近一点</div>
+      <div class="msg">好的，把客厅沙发向上移 400 mm。
+        <table style="margin-top:6px"><tr><th>对象</th><th>字段</th><th>旧</th><th>新</th></tr>
+        <tr><td>沙发</td><td>位置 y</td><td>3425</td><td>3025</td></tr></table>
+        <div class="muted" style="margin-top:4px">↑ 改动清单由程序生成</div>
+      </div>
+      <div class="muted">试看中：应用前可继续说“再往左一点”。</div>`)}
+    <div class="canvas">
+      <div class="banner"><b>试看中，尚未应用</b><span class="muted">改动 1 处</span><span class="grow"></span><span class="btn pri">应用到设计</span><span class="btn">放弃</span><span class="btn">继续调整</span></div>
+      <div style="position:absolute;inset:60px 20px 30px">${plan({ dashed:true, ghost:true })}</div>
+      <div class="note" style="right:30px;top:70px">橙色虚线 = 改动位置；灰色 = 原位置</div>
+      <div class="label">试看期间：导入、导出、保存为版本、历史版本暂不可用</div>
+    </div>
+    <div class="col right">
+      <div class="h">沙发 <span class="muted">家具 ›</span></div>
+      <div class="muted">显示的是试看中的值</div>
+      ${field('模板','三人沙发',true)}${field('所属房间','客厅 ▾')}${field('中心 x','2500 mm')}${field('中心 y','3025 mm')}${field('朝向','180°')}
+      ${field('长×宽×高','2400×850×800')}${field('离地','0 mm')}
+      <div class="sec">部件外观</div>${field('框架 · 布','跟随风格')}${field('腿 · 木','跟随风格')}
+    </div></div>`,
+
+  // 4 3D · 单间展台 · 编辑 · 家具维度
+  '4': () => topbar({ page:'3d', mode:'edit', dim:'furn' }) + `<div class="body">
+    ${chat(`<div class="msg u">带我看主卧</div><div class="msg">已切到主卧单间视图。</div>`)}
+    <div class="canvas">
+      <div class="tools"><span class="btn">全屋</span><span class="btn pri">单间：主卧 ▾</span><span class="btn">‹ 上一间</span><span class="btn">下一间 ›</span><span class="btn pri">剖面 ●</span></div>
+      <div class="tools r"><span class="btn">恢复视角</span><span class="btn">俯视</span></div>
+      <svg width="100%" height="100%" viewBox="0 0 700 640">
+        <polygon points="350,450 560,360 350,270 140,360" fill="#ecebe6" stroke="#999"/>
+        <polygon points="140,360 350,450 350,490 140,400" fill="#e2e0da" stroke="#999"/>
+        <polygon points="350,450 560,360 560,400 350,490" fill="#d8d6cf" stroke="#999"/>
+        <polygon points="350,420 520,350 350,285 180,350" fill="#fafafa" stroke="#555" stroke-width="2"/>
+        <polygon points="180,350 350,285 350,195 180,260" fill="#f2f2f2" stroke="#777"/>
+        <polygon points="350,285 520,350 520,260 350,195" fill="#f2f2f2" stroke="#777"/>
+        <polygon points="250,345 330,315 400,345 320,375" fill="#dde6ff" stroke="#3a5bd9" stroke-width="2"/>
+        <text x="325" y="350" text-anchor="middle" font-size="12">床（选中）</text>
+        <text x="350" y="520" text-anchor="middle" fill="#777">小展台：主卧外轮廓 + 300 mm 边距</text>
+        <text x="350" y="180" text-anchor="middle" fill="#777">靠镜头两面墙已降低（剖面）</text>
+      </svg>
+      <div class="label">只显示本房间；其他房间隐藏。3D 中不拖动，点选后在右侧改参数</div>
+    </div>
+    <div class="col right">
+      <div class="h">双人床 <span class="muted">家具 ›</span></div>
+      ${field('名称','双人床')}${field('所属房间','主卧 ▾')}${field('中心 x','1500 mm')}${field('中心 y','2000 mm')}${field('朝向','0°')}
+      ${field('长','1800 mm')}${field('宽','2000 mm')}${field('高','450 mm')}${field('离地','0 mm')}
+      <div class="sec">部件外观</div>${field('床架 · 木','胡桃木 ✎')}${field('被子 · 布','跟随风格')}
+      <div style="margin-top:auto;display:flex;gap:6px"><span class="btn">复制</span><span class="btn">删除</span></div>
+    </div></div>`,
+
+  // 5 风格试看（3D · 编辑）
+  '5': () => topbar({ page:'3d', mode:'edit', dim:'room', locked:true }) + `<div class="body" style="--l:36px;--r:320px">
+    <div class="collapsed">AI 对话 ›</div>
+    <div class="canvas">
+      <div class="banner"><b>风格试看中，尚未应用</b><span class="muted">影响 18 个对象</span><span class="grow"></span><div class="seg"><span>修改前</span><span class="on">修改后</span></div><span class="btn pri">应用到设计</span><span class="btn">放弃</span></div>
+      <div style="position:absolute;inset:70px 20px 30px;display:flex;align-items:center;justify-content:center;color:#999;border:1px dashed #ccc;border-radius:6px">3D 全屋 · 简约中古风效果（改动对象带高亮描边）</div>
+      <div class="label">风格只改颜色、材质、灯光；不改任何尺寸和位置</div>
+    </div>
+    <div class="col right">
+      <div class="h">室内风格 <span class="muted">✕</span></div>
+      <div style="display:flex;gap:6px"><div class="card">温馨浅木</div><div class="card on">简约中古风</div><div class="card">自定义</div></div>
+      <div class="sec">调色</div>
+      ${field('墙面','<i class="sw" style="background:#F7F5F0"></i> 暖白')}${field('主色','<i class="sw" style="background:#F4F2ED"></i>')}${field('木色','<i class="sw" style="background:#6B4A33"></i> 胡桃木')}
+      ${field('布艺','<i class="sw" style="background:#D8D1C4"></i>')}${field('金属','<i class="sw" style="background:#2F2F2F"></i> 黑铁')}${field('点缀','<i class="sw" style="background:#8C6A3F"></i> 古铜')}
+      ${field('地面','木地板 · 中浅')}
+      <div class="sec">灯光</div>${field('色温','4000 K')}${field('亮度','1.0')}
+      <div class="row"><span>☐ 覆盖所有兼容对象</span><span class="muted">默认保留单独改过的</span></div>
+      <div class="sec">受影响对象</div>
+      <div class="muted">墙面 12 · 地面 6 · 家具部件 14<br>保留：双人床 · 床架（单独改过）</div>
+    </div></div>`,
+};
+document.getElementById('app').innerHTML = screens[s]();
+</script>
+</body>
+</html>

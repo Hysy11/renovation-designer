@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>验收户型定稿图 · 两室两厅一厨一卫</title>
+<style>
+  :root { --line: rgba(120,110,90,.28); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    background: #f6f2e9; color: #3a342b;
+    padding: 30px 16px 50px;
+    display: flex; justify-content: center;
+  }
+  .page { width: 1000px; max-width: 100%; }
+  h1 { font-size: 21px; letter-spacing: .5px; }
+  .sub { font-size: 13px; color: #8a8172; margin: 8px 0 20px; line-height: 1.8; }
+  .card {
+    background: #fffdf8; border: 1px solid #e8e1d2; border-radius: 14px;
+    padding: 24px 26px;
+    box-shadow: 0 2px 4px rgba(70,60,35,.05), 0 14px 30px rgba(70,60,35,.09);
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 15px; margin-bottom: 14px; color: #4a4437; }
+
+  .gridwrap { width: max-content; margin: 4px auto 0; }
+  .topnums { display: flex; }
+  .topnums span { width: 74px; text-align: center; font-size: 11px; color: #a89f8d; height: 20px; }
+  .rownums { display: flex; flex-direction: column; width: 30px; margin-top: 22px; }
+  .rownums span { height: 62px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #a89f8d; }
+  .grid { display: grid; grid-template-columns: repeat(12, 74px); grid-template-rows: repeat(6, 62px); border: 2.5px solid #a99f8b; background: #fff; }
+  .cell {
+    border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 600; position: relative; color: #4c463b;
+  }
+  .cell.blank { background: repeating-linear-gradient(45deg, #efece4 0 7px, #f8f5ee 7px 14px); }
+  .c-卫 { background: #d3e6f8; }
+  .c-卧 { background: #fbdcc3; }
+  .c-阳 { background: #d6ecd2; }
+  .c-书 { background: #f8e8ab; }
+  .c-道 { background: #e7e4dc; }
+  .c-厨 { background: #f7d2d3; }
+  .c-餐 { background: #e7ddf5; }
+  .c-客 { background: #cde6df; }
+  .overlay { position: absolute; pointer-events: none; }
+  .openwall { border-left: 3px dashed #b0655a; }
+  .door { background: #c25b4e; border-radius: 3px; }
+  .doorlabel {
+    text-align: center; font-size: 11px; color: #c25b4e; line-height: 16px;
+    background: rgba(255,255,255,.9); border-radius: 4px;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 18px; font-size: 13px; color: #5a5245; justify-content: center; }
+  .legend .chip { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; border: 1px solid rgba(0,0,0,.12); }
+  .foot { margin-top: 14px; font-size: 12.5px; color: #8a8172; text-align: center; line-height: 1.8; }
+
+  table.rooms { border-collapse: collapse; width: 100%; font-size: 13px; }
+  table.rooms th, table.rooms td { border: 1px solid #e8e1d2; padding: 6px 10px; text-align: left; color: #4c463b; }
+  table.rooms th { background: #f3eee2; color: #6b6252; font-weight: 600; white-space: nowrap; }
+  table.rooms td.dim { white-space: nowrap; }
+  .sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1px solid rgba(0,0,0,.12); }
+  .doors { font-size: 13.5px; color: #4c463b; line-height: 2; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>验收户型定稿图（两室两厅一厨一卫）</h1>
+  <div class="sub">
+    12 列 × 6 行，1 格 = 1 米 × 1 米，户型外框 12 × 6 米。2026-10-12 确认：61、62、412、512、612 为空（户型外），其余按此前方案。<br>
+    此图即 M2-4 在浏览器里用鼠标搭出的验收样式的依据。
+  </div>
+
+  <div class="card">
+    <h2>户型图</h2>
+    <div class="gridwrap" id="wrap"></div>
+    <div class="legend">
+      <span><span class="chip" style="background:#d3e6f8"></span>卫生间 2×2 米</span>
+      <span><span class="chip" style="background:#fbdcc3"></span>卧室 4×3 米</span>
+      <span><span class="chip" style="background:#d6ecd2"></span>阳台 1×3 米</span>
+      <span><span class="chip" style="background:#f8e8ab"></span>书房 2×3 米</span>
+      <span><span class="chip" style="background:#e7e4dc"></span>过道 2×1 米</span>
+      <span><span class="chip" style="background:#f7d2d3"></span>厨房 2×3 米</span>
+      <span><span class="chip" style="background:#e7ddf5"></span>餐厅 3×4 米</span>
+      <span><span class="chip" style="background:#cde6df"></span>客厅 4×3 米</span>
+      <span><span class="chip" style="background:repeating-linear-gradient(45deg,#efece4 0 3px,#f8f5ee 3px 6px)"></span>斜纹＝户型外空白</span>
+    </div>
+    <div class="foot">
+      室内合计 57 ㎡。虚线＝餐厅/客厅之间开宽门洞、不砌死墙；红条＝入户门（过道北墙）。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>房间明细（搭建时的精确尺寸）</h2>
+    <table class="rooms">
+      <tr><th>房间</th><th>格子范围</th><th>尺寸（长×宽，米）</th><th>左上角位置（米）</th><th>软件里的用途</th></tr>
+      <tr><td><span class="sw" style="background:#d3e6f8"></span>卫生间</td><td class="dim">16–27</td><td class="dim">2 × 2</td><td class="dim">(5, 0)</td><td>卫生间</td></tr>
+      <tr><td><span class="sw" style="background:#fbdcc3"></span>卧室</td><td class="dim">18–311</td><td class="dim">4 × 3</td><td class="dim">(7, 0)</td><td>卧室</td></tr>
+      <tr><td><span class="sw" style="background:#d6ecd2"></span>阳台</td><td class="dim">112–312</td><td class="dim">1 × 3</td><td class="dim">(11, 0)</td><td>阳台</td></tr>
+      <tr><td><span class="sw" style="background:#f8e8ab"></span>书房</td><td class="dim">31–52</td><td class="dim">2 × 3</td><td class="dim">(0, 2)</td><td>其他（名称"书房"）</td></tr>
+      <tr><td><span class="sw" style="background:#e7e4dc"></span>过道</td><td class="dim">33–34</td><td class="dim">2 × 1</td><td class="dim">(2, 2)</td><td>其他（名称"过道"）</td></tr>
+      <tr><td><span class="sw" style="background:#f7d2d3"></span>厨房</td><td class="dim">43–64</td><td class="dim">2 × 3</td><td class="dim">(2, 3)</td><td>厨房</td></tr>
+      <tr><td><span class="sw" style="background:#e7ddf5"></span>餐厅</td><td class="dim">35–67</td><td class="dim">3 × 4</td><td class="dim">(4, 2)</td><td>其他（名称"餐厅"）</td></tr>
+      <tr><td><span class="sw" style="background:#cde6df"></span>客厅</td><td class="dim">48–611</td><td class="dim">4 × 3</td><td class="dim">(7, 3)</td><td>客厅</td></tr>
+    </table>
+    <div class="doors" style="margin-top:12px">
+      门：入户门在过道北墙；卧室门朝客厅、卫生间门朝餐厅、阳台门（推拉）朝卧室、书房门和厨房门朝过道；餐厅与客厅之间开 2.4 米宽门洞（无门扇）。<br>
+      窗：卧室、卫生间北墙各一扇；阳台东墙一扇；书房西墙一扇；厨房、餐厅、客厅南墙各一扇。
+    </div>
+  </div>
+</div>
+
+<script>
+  // 已确认定稿：61、62、412、512、612 为空
+  const LAYOUT = [
+    ['空','空','空','空','空','卫','卫','卧','卧','卧','卧','阳'],
+    ['空','空','空','空','空','卫','卫','卧','卧','卧','卧','阳'],
+    ['书','书','道','道','餐','餐','餐','卧','卧','卧','卧','阳'],
+    ['书','书','厨','厨','餐','餐','餐','客','客','客','客','空'],
+    ['书','书','厨','厨','餐','餐','餐','客','客','客','客','空'],
+    ['空','空','厨','厨','餐','餐','餐','客','客','客','客','空'],
+  ];
+  const CW = 74, CH = 62;
+
+  const wrap = document.getElementById('wrap');
+  let h = '<div style="display:flex">';
+  h += '<div class="rownums">' + Array.from({ length: 6 }, (_, i) => `<span>${i + 1}</span>`).join('') + '</div>';
+  h += '<div>';
+  h += '<div class="topnums">' + Array.from({ length: 12 }, (_, i) => `<span>${i + 1}</span>`).join('') + '</div>';
+  h += '<div style="position:relative">';
+  h += '<div class="grid">';
+  LAYOUT.forEach((row) => {
+    row.forEach((name) => {
+      const cls = name === '空' ? 'cell blank' : `cell c-${name}`;
+      h += `<div class="${cls}">${name === '空' ? '' : name}</div>`;
+    });
+  });
+  h += '</div>';
+  // 餐厅/客厅开放边界（第 7/8 列之间，第 4–6 行）
+  h += `<div class="overlay openwall" style="left:${7 * CW}px;top:${3 * CH}px;height:${3 * CH}px"></div>`;
+  // 入户门：过道北墙，第 3–4 列
+  h += `<div class="overlay door" style="left:${2 * CW + 10}px;top:${2 * CH - 3}px;width:${2 * CW - 20}px;height:6px"></div>`;
+  h += `<div class="overlay doorlabel" style="left:${2 * CW + 10}px;top:${2 * CH - 24}px;width:${2 * CW - 20}px">入户门</div>`;
+  h += '</div></div></div>';
+  wrap.innerHTML = h;
+</script>
+</body>
+</html>
